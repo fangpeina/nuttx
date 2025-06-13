@@ -204,7 +204,6 @@ static int ff_erase_effect(FAR struct ff_upperhalf_s *upper, int effect_id,
                            FAR struct file *filep)
 {
   FAR struct ff_lowerhalf_s *lower = upper->lower;
-  irqstate_t flags;
   int ret;
 
   ret = ff_check_effect_access(upper, effect_id, filep);
@@ -213,9 +212,7 @@ static int ff_erase_effect(FAR struct ff_upperhalf_s *upper, int effect_id,
       return ret;
     }
 
-  flags = enter_critical_section();
   lower->playback(lower, effect_id, 0);
-  leave_critical_section(flags);
 
   upper->effects[effect_id].owner = NULL;
   if (lower->erase != NULL)
@@ -444,7 +441,6 @@ static int ff_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 
 int ff_event(FAR struct ff_lowerhalf_s *lower, uint32_t code, int value)
 {
-  irqstate_t flags;
   int ret = OK;
 
   switch (code)
@@ -456,9 +452,7 @@ int ff_event(FAR struct ff_lowerhalf_s *lower, uint32_t code, int value)
               break;
             }
 
-          flags = enter_critical_section();
           lower->set_gain(lower, value);
-          leave_critical_section(flags);
         }
         break;
 
@@ -469,9 +463,7 @@ int ff_event(FAR struct ff_lowerhalf_s *lower, uint32_t code, int value)
               break;
             }
 
-          flags = enter_critical_section();
           lower->set_autocenter(lower, value);
-          leave_critical_section(flags);
         }
         break;
 
@@ -479,9 +471,7 @@ int ff_event(FAR struct ff_lowerhalf_s *lower, uint32_t code, int value)
         {
           if (ff_check_effect_access(lower->priv, code, NULL) == 0)
             {
-              flags = enter_critical_section();
               ret = lower->playback(lower, code, value);
-              leave_critical_section(flags);
             }
         }
         break;
